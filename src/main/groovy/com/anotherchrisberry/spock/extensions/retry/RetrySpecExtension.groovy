@@ -9,8 +9,8 @@ import org.spockframework.runtime.model.SpecInfo
 class RetrySpecExtension extends AbstractAnnotationDrivenExtension<RetryOnFailure> {
 
     void visitFeatureAnnotation(RetryOnFailure retries, FeatureInfo feature) {
-        clearInterceptors(feature)
-        feature.getFeatureMethod().interceptors.add(new RetryInterceptor(getNumberOfRetries(retries)))
+        RetryInterceptor parent = clearInterceptors(feature)
+        feature.getFeatureMethod().interceptors.add(new RetryInterceptor(parent, retries.times() ,retries.beforeRetryMethod()))
     }
 
     void visitSpecAnnotation(RetryOnFailure retries, SpecInfo spec) {
@@ -32,15 +32,10 @@ class RetrySpecExtension extends AbstractAnnotationDrivenExtension<RetryOnFailur
         if (selfAndSuperSpecs.any { it.getReflection().isAnnotationPresent(RetryOnFailure.class)}) {
             List<FeatureInfo> featuresToRetry = [selfAndSubSpecs.features].flatten().unique()
             for (FeatureInfo feature : featuresToRetry) {
-                clearInterceptors(feature)
-                addInterceptors(feature, retries)
+                RetryInterceptor parent = clearInterceptors(feature)
+                addInterceptors(feature, parent,  retries)
             }
         }
-    }
-
-    int getNumberOfRetries(RetryOnFailure retries) {
-        String defaultRetries = Integer.toString(retries.times())
-        return Integer.parseInt(System.getProperty("spock-retry.times", defaultRetries))
     }
 
     private List<MethodInfo> getInterceptableMethods(FeatureInfo feature) {
@@ -53,14 +48,21 @@ class RetrySpecExtension extends AbstractAnnotationDrivenExtension<RetryOnFailur
         ].flatten().unique() as List<MethodInfo>
     }
 
-    private void clearInterceptors(FeatureInfo featureInfo) {
+    private RetryInterceptor clearInterceptors(FeatureInfo featureInfo) {
         List<MethodInfo> interceptableMethods = getInterceptableMethods(featureInfo)
-        interceptableMethods.each { it.interceptors.removeAll { it.class == RetryInterceptor } }
+        List<RetryInterceptor> found = []
+        interceptableMethods.each {
+            found.addAll(it.interceptors.findAll { it.class == RetryInterceptor })
+            it.interceptors.removeAll { it.class == RetryInterceptor }
+        }
+        if(found.size() > 0) return found[0]
+        return null
     }
 
-    private void addInterceptors(FeatureInfo featureInfo, RetryOnFailure retries) {
-        def interceptor = new RetryInterceptor(getNumberOfRetries(retries))
+    private void addInterceptors(FeatureInfo featureInfo, RetryInterceptor parent,  RetryOnFailure retries) {
+        def interceptor = new RetryInterceptor(parent,retries.times(),retries.beforeRetryMethod())
         getInterceptableMethods(featureInfo).each {
+            println "adding RetryInterceptor to $it.name"
             it.addInterceptor(interceptor)
         }
     }

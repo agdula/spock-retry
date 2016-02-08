@@ -12,6 +12,7 @@ import java.lang.annotation.Target
 @ExtensionAnnotation(RetrySpecExtension.class)
 public @interface RetryOnFailure {
 
-    int times() default 1;
+    int times() default -1;
 
+    String beforeRetryMethod() default "";
 }

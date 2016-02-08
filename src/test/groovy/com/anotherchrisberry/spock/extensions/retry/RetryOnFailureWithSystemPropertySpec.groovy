@@ -2,10 +2,10 @@ package com.anotherchrisberry.spock.extensions.retry
 
 import spock.lang.Specification
 
-@RetryOnFailure(times=3)
+ @RetryOnFailure
 class RetryOnFailureWithSystemPropertySpec extends Specification {
 
-    static Integer classLevelTries = 0
+    static Integer defaultLevelTries = 0
     static Integer methodLevelTries = 0
     static Integer thrownTries = 0
 
@@ -13,27 +13,27 @@ class RetryOnFailureWithSystemPropertySpec extends Specification {
         System.setProperty("spock-retry.times", "5")
     }
 
-    void 'class level test'() {
+    void 'default level test'() {
         when:
-        if (classLevelTries < 5) {
-            classLevelTries++
-            throw new RuntimeException("have not tried enough times ($classLevelTries)")
+        if (defaultLevelTries < 5) {
+            defaultLevelTries++
+            throw new RuntimeException("have not tried enough times ($defaultLevelTries)")
         }
 
         then:
-        classLevelTries == 5
+        defaultLevelTries == 5
     }
 
     @RetryOnFailure(times=2)
     void 'method level test'() {
         when:
-        if (methodLevelTries < 5) {
+        if (methodLevelTries < 2) {
             methodLevelTries++
             throw new RuntimeException("have not tried enough times ($methodLevelTries)")
         }
 
         then:
-        methodLevelTries == 5
+        methodLevelTries == 2
     }
 
     @RetryOnFailure(times=7)
