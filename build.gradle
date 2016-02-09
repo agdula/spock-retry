@@ -1,4 +1,4 @@
-def spockRetryVersion = "0.4.1"
+def spockRetryVersion = "0.4.2-ag"
 
 buildscript {
     repositories {
@@ -51,7 +51,7 @@ bintray {
       repo = "spock-retry"
       name = "spock-retry"
       licenses = ["MIT"]
-      vcsUrl = "https://github.com/anotherchrisberry/spock-retry.git"
+      vcsUrl = "https://github.com/agdula/spock-retry.git"
       publications = ["mavenJava"]    
       version {
         name = "${spockRetryVersion}"
